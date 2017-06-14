@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<h2>
+Confirm Deletion of Category {{category.name}}
+</h2>
+<h4 class="alert">
+	All items under this category will also be deleted!!!!
+</h4>
+<form method="POST">
+	<button class="btn btn-default" onclick="history.back()">Cancel</button>
+	<button type="submit" class="btn btn-default">Save</button>
+</form>
+{% endblock %}

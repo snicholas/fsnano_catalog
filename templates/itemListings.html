@@ -1,0 +1,28 @@
+<a class="text-right" href="{{url_for('newItem')}}">New Item</a>
+{% if lastItems %}
+	<ul>
+	{% for item in lastItems %}
+		<li>
+			<a href="{{url_for('showItemDetail', 
+							cat_id = item.category.id, 
+							cat_name = item.category.name,
+							item_id = item.id, 
+							item_name = item.name
+					)}}">{{item.name}}
+			</a>
+			{% if(username != '') %}
+			<a href="{{url_for('editItem',
+							cat_id = item.category.id, cat_name = item.category.name,
+							item_id = item.id, item_name = item.name)}}">
+					<i class="fa fa-pencil-square-o"></i>
+			</a>
+			<a href="{{url_for('deleteItem',
+							cat_id = item.category.id, cat_name = item.category.name,
+							item_id = item.id, item_name = item.name)}}">
+					<i class="fa fa-trash-o"></i>
+			</a>
+			{% endif %}
+		</li>
+	{% endfor %}
+	</ul>
+{% endif %}

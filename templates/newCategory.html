@@ -1,0 +1,25 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<h2>
+{% if category.id > 0 %}
+Edit
+{% else %}
+Create
+{% endif %}
+Category
+</h2>
+<form method="POST">
+	<input type="hidden" value="{{category.id}}" name="id" type="id">
+	<label for="name" class="col-xs-12 col-sm-3">Name: </label>
+	<input class="col-xs-12 col-sm-9" type="text" required name="name" id="name" value="{{category.name}}">
+	<div class="clearboth"><br></div>
+	<label for="description" class="col-xs-12 col-sm-3">Description: </label>
+	<input class="col-xs-12 col-sm-9" type="text" name="description" id="description" value="{{category.description}}">
+	<div class="clearboth"><br><br></div>
+	<div class="col-xs-12 text-right">
+		<button class="btn btn-default" onclick="history.back()">Cancel</button>
+		<button type="submit" class="btn btn-default">Save</button>
+	</div>
+</form>
+{% endblock %}

@@ -1,0 +1,12 @@
+<a class="text-right" href="{{url_for('newCategory')}}">New Category</a>
+<ul>
+{% for cat in categories %}
+	<li>
+		<a href="{{url_for('showCategory',cat_id = cat.id, cat_name = cat.name)}}">{{cat.name}}</a>
+		{% if(username != '') %}
+		<a href="{{url_for('editCategory',cat_id = cat.id, cat_name = cat.name)}}"><i class="fa fa-pencil-square-o"></i></a>
+		<a href="{{url_for('deleteCategory',cat_id = cat.id, cat_name = cat.name)}}"><i class="fa fa-trash-o"></i></a>
+		{% endif %}
+	</li>
+{% endfor %}
+</ul>

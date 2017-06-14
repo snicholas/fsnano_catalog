@@ -1,0 +1,10 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<div class="col-sm-3">{% include "catListings.html" %}</div>
+<div class="col-sm-9">
+	<h4>{{Item.category.name}} - {{Item.name}}</h4>
+	<p>{{Item.description}}</p>
+</div>
+
+{% endblock %}

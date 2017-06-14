@@ -1,0 +1,33 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<h2>
+{% if Item.id > 0 %}
+Edit
+{% else %}
+Create
+{% endif %}
+Category
+</h2>
+<form method="POST" enctype="multipart/form-data">
+	<input type="hidden" value="{{Item.id}}" name="id" type="id">
+	<label for="name" class="col-xs-12 col-sm-3">Name: </label>
+	<input class="col-xs-12 col-sm-9" type="text" required name="name" id="name" value="{{Item.name}}">
+	<div class="clearboth"><br></div>
+	<label for="category" class="col-xs-12 col-sm-3">Name: </label>
+	<select name="category_id" id="category_id">
+		{% for cat in categories %}
+			<option value="{{cat.id}}" {% if cat.id == Item.category_id %} selected {% endif %} >{{cat.name}}</option>
+		{% endfor %}
+	</select>
+	<div class="clearboth"><br></div>
+	<label for="description" class="col-xs-12 col-sm-3">Description: </label>
+	<textarea name="description" id="description" cols="100" rows="5">{{Item.description}}</textarea>
+	<!--<input type="text" name="description" id="description" value="{{Item.description}}">-->
+	<div class="clearboth"><br><br></div>
+	<div class="col-xs-12 text-right">
+		<button class="btn btn-default" onclick="history.back()">Cancel</button>
+		<button type="submit" class="btn btn-default">Save</button>
+	</div>
+</form>
+{% endblock %}
