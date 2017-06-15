@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request,
-                redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request
+from flask import redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine, asc, desc, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -28,6 +28,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app = Flask(__name__)
 
+
 def login_required(f):
     @wraps(f)
     def decorate_function(*args, **kwargs):
@@ -36,109 +37,159 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+@login_required
 def getUsername():
-    if login_session.get('credentials') == None:
-        return ''
     return login_session['username']
+
+
+@login_required
+def getUserEmail():
+    return login_session['email']
+
 
 # Home page
 @app.route('/')
 @app.route('/catalog')
 def mainPage():
     categories = session.query(Category).all()
-    lastItems = session.query(Item).order_by(desc(Item.date_insert)).order_by(desc(Item.id)).limit(10)
-    return render_template('index.html', username = getUsername(), categories = categories, lastItems = lastItems)
+    lastItems = session.query(Item)
+    .order_by(desc(Item.date_insert))
+    .order_by(desc(Item.id)).limit(10)
+    return render_template('index.html',
+                           username=getUsername(),
+                           categories=categories,
+                           lastItems=lastItems)
 
 
 # Item detail page
-@app.route('/catalog/<int:cat_id>/<string:cat_name>/<int:item_id>/<string:item_name>')
+@app.route('/catalog/<int:cat_id>/<string:cat_name>' +
+           '/<int:item_id>/<string:item_name>')
 def showItemDetail(cat_id, cat_name, item_id, item_name):
     categories = session.query(Category).all()
-    item = session.query(Item).filter_by(id = item_id).one()
-    return render_template('itemDetail.html', username = getUsername(), categories = categories, Item = item) 
+    item = session.query(Item).filter_by(id=item_id).one()
+    return render_template('itemDetail.html',
+                           username=getUsername(),
+                           categories=categories,
+                           Item=item)
+
 
 # Item detail JSON
-@app.route('/catalog/<int:cat_id>/<string:cat_name>/<int:item_id>/<string:item_name>/JSON')
+@app.route('/catalog/<int:cat_id>/<string:cat_name>/' +
+           '<int:item_id>/<string:item_name>/JSON')
 def itemDetailJSON(cat_id, cat_name, item_id, item_name):
-    item = session.query(Item).filter_by(id = item_id).one()
-    return jsonify(Item = item.serialize)
+    item = session.query(Item).filter_by(id=item_id).one()
+    return jsonify(Item=item.serialize)
 
 
 # Item creation
 @login_required
-@app.route('/catalog/newItem', methods=['GET','POST'])
+@app.route('/catalog/newItem', methods=['GET', 'POST'])
 def newItem():
-    categories = session.query(Category).all()
+    categories = session.query(Category)
+    .filter_by(useremail=getUserEmail()).all()
+    if len(categories) == 0:
+        redirect('/catalog/newCategory?nocat=true')
     if request.method == 'POST':
         item = Item(
-            name = request.form['name'],
-            description = request.form['description'],
-            category_id = request.form['category_id'],
-            date_insert = datetime.datetime.now()
+            name=request.form['name'],
+            description=request.form['description'],
+            category_id=request.form['category_id'],
+            date_insert=datetime.datetime.now(),
+            useremail=getUserEmail()
         )
         session.add(item)
         flash('Item %s Successfully Edited' % Item.name)
         session.commit()
         return redirect('/catalog')
     else:
-        return render_template('newItem.html', username = getUsername(), categories = categories, Item = Item(name = '', description = '', category_id = -1) )
+        return render_template('newItem.html',
+                               username=getUsername(),
+                               categories=categories,
+                               Item=Item(name='',
+                                         description='',
+                                         category_id=-1))
 
 
 # Item edit
 @login_required
-@app.route('/catalog/<int:cat_id>/<string:cat_name>/<int:item_id>/<string:item_name>/edit', methods=['GET','POST'])
+@app.route('/catalog/<int:cat_id>/<string:cat_name>/' +
+           '<int:item_id>/<string:item_name>/edit',
+           methods=['GET', 'POST'])
 def editItem(cat_id, cat_name, item_id, item_name):
-    categories = session.query(Category).all()
-    item = session.query(Item).filter_by(id = item_id).one()
-    if request.method == 'POST':        
+    categories = session.query(Category)
+    .filter_by(useremail=getUserEmail()).all()
+    item = session.query(Item).filter_by(id=item_id).one()
+    if login_session['email'] != item.useremail:
+        redirect('/unauthorized')
+    if request.method == 'POST':
         item.name = request.form['name']
         item.description = request.form['description']
         item.category_id = request.form['category_id']
-        #item.category = cat
         session.add(item)
         flash('Item %s Successfully Edited' % item.name)
         session.commit()
         return redirect('/catalog')
     else:
-        return render_template('newItem.html', username = getUsername(), categories = categories, Item = item )
+        return render_template('newItem.html',
+                               username=getUsername(),
+                               categories=categories,
+                               Item=item)
 
 
 # Item delete
 @login_required
-@app.route('/catalog/<int:cat_id>/<string:cat_name>/<int:item_id>/<string:item_name>/delete', methods=['GET','POST'])
+@app.route('/catalog/<int:cat_id>/<string:cat_name>/' +
+           '<int:item_id>/<string:item_name>/delete',
+           methods=['GET', 'POST'])
 def deleteItem(cat_id, cat_name, item_id, item_name):
-    category = session.query(Category).filter_by(id = cat_id).one()
-    item = session.query(Item).filter_by(id = item_id).one()
+    category = session.query(Category).filter_by(id=cat_id).one()
+    item = session.query(Item).filter_by(id=item_id).one()
+    if login_session['email'] != item.useremail:
+        redirect('/unauthorized')
     if request.method == 'POST':
-        session.query(Item).filter_by(id = item_id).delete()    
+        session.query(Item).filter_by(id=item_id).delete()
         flash('Item %s Successfully Deleted' % item_name)
         session.commit()
         return redirect('/catalog')
     else:
-        return render_template('deleteItem.html', username = getUsername(), category = category, item = item )
+        return render_template('deleteItem.html',
+                               username=getUsername(),
+                               category=category,
+                               item=item)
+
 
 # Category detail page
 @app.route('/catalog/<int:cat_id>/<string:cat_name>')
 def showCategory(cat_id, cat_name):
     categories = session.query(Category).all()
-    items = session.query(Item).filter_by(category_id = cat_id).order_by(asc(Item.name)).all()
-    return render_template('catDetail.html', username = getUsername(), categories = categories, lastItems = items) 
+    items = session.query(Item)
+    .filter_by(category_id=cat_id)
+    .order_by(asc(Item.name)).all()
+    return render_template('catDetail.html',
+                           username=getUsername(),
+                           categories=categories,
+                           lastItems=items)
 
 
 # Item detail JSON
 @app.route('/catalog/<int:cat_id>/<string:cat_name>/JSON')
 def categoryJSON(cat_id, cat_name):
-    category = session.query(Category).filter_by(id = cat_id).one()
-    items = session.query(Item).filter_by(category_id = cat_id).order_by(asc(Item.name)).all()
-    return jsonify(Category = category.serialize)
+    category = session.query(Category).filter_by(id=cat_id).one()
+    items = session.query(Item)
+    .filter_by(category_id=cat_id)
+    .order_by(asc(Item.name)).all()
+    return jsonify(Category=category.serialize)
 
 
-# Category creation  
-@login_required  
-@app.route('/catalog/newCategory/', methods=['GET','POST'])
+# Category creation
+@login_required
+@app.route('/catalog/newCategory/', methods=['GET', 'POST'])
 def newCategory():
     if request.method == 'POST':
-        newCat = Category(name = request.form['name'], description = request.form['description'])
+        newCat = Category(name=request.form['name'],
+                          description=request.form['description'],
+                          useremail=getUserEmail())
         session.add(newCat)
         flash('New Category %s Successfully Created' % newCat.name)
         session.commit()
@@ -151,9 +202,12 @@ def newCategory():
 
 # Category edit
 @login_required
-@app.route('/catalog/<int:cat_id>/<string:cat_name>/edit', methods=['GET','POST'])
+@app.route('/catalog/<int:cat_id>/<string:cat_name>/edit',
+           methods=['GET', 'POST'])
 def editCategory(cat_id, cat_name):
-    category = session.query(Category).filter_by(id = cat_id).one()
+    category = session.query(Category).filter_by(id=cat_id).one()
+    if login_session['email'] != category.useremail:
+        redirect('/unauthorized')
     if request.method == 'POST':
         category.name = request.form['name']
         category.description = request.form['description']
@@ -173,6 +227,8 @@ def editCategory(cat_id, cat_name):
            methods=['GET', 'POST'])
 def deleteCategory(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
+    if login_session['email'] != category.useremail:
+        redirect('/unauthorized')
     if request.method == 'POST':
         items = session.query(Item).filter_by(category_id=cat_id).delete()
         session.delete(category)
@@ -194,6 +250,12 @@ def logout():
     login_session['picture'] = None
     login_session['email'] = None
     return redirect('/')
+
+
+# unauthorized page
+@app.route('/unauthorized')
+def unauthorized():
+    return render_template('unauthorized.html')
 
 
 # login page
