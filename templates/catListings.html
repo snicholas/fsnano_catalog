@@ -3,7 +3,7 @@
 {% for cat in categories %}
 	<li>
 		<a href="{{url_for('showCategory',cat_id = cat.id, cat_name = cat.name)}}">{{cat.name}}</a>
-		{% if(username != '') %}
+		{% if(username != '' and useremail==cat.useremail) %}
 		<a href="{{url_for('editCategory',cat_id = cat.id, cat_name = cat.name)}}"><i class="fa fa-pencil-square-o"></i></a>
 		<a href="{{url_for('deleteCategory',cat_id = cat.id, cat_name = cat.name)}}"><i class="fa fa-trash-o"></i></a>
 		{% endif %}

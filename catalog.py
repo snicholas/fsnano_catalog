@@ -35,17 +35,19 @@ def login_required(f):
         if 'username' not in login_session:
             return redirect('/login')
         return f(*args, **kwargs)
-    return decorated_function
+    return decorate_function
 
 
-@login_required
 def getUsername():
-    return login_session['username']
+    if 'username' not in login_session:
+        return ''
+    return login_session.get('username')
 
 
-@login_required
 def getUserEmail():
-    return login_session['email']
+    if 'email' not in login_session:
+        return ''
+    return login_session.get('email')
 
 
 # Home page
@@ -54,10 +56,11 @@ def getUserEmail():
 def mainPage():
     categories = session.query(Category).all()
     lastItems = session.query(Item)
-    .order_by(desc(Item.date_insert))
-    .order_by(desc(Item.id)).limit(10)
+    lastItems = lastItems.order_by(desc(Item.date_insert))
+    lastItems = lastItems.order_by(desc(Item.id)).limit(10)
     return render_template('index.html',
                            username=getUsername(),
+                           useremail=getUserEmail(),
                            categories=categories,
                            lastItems=lastItems)
 
@@ -70,6 +73,7 @@ def showItemDetail(cat_id, cat_name, item_id, item_name):
     item = session.query(Item).filter_by(id=item_id).one()
     return render_template('itemDetail.html',
                            username=getUsername(),
+                           useremail=getUserEmail(),
                            categories=categories,
                            Item=item)
 
@@ -87,7 +91,7 @@ def itemDetailJSON(cat_id, cat_name, item_id, item_name):
 @app.route('/catalog/newItem', methods=['GET', 'POST'])
 def newItem():
     categories = session.query(Category)
-    .filter_by(useremail=getUserEmail()).all()
+    categories = categories.filter_by(useremail=getUserEmail()).all()
     if len(categories) == 0:
         redirect('/catalog/newCategory?nocat=true')
     if request.method == 'POST':
@@ -105,6 +109,7 @@ def newItem():
     else:
         return render_template('newItem.html',
                                username=getUsername(),
+                               useremail=getUserEmail(),
                                categories=categories,
                                Item=Item(name='',
                                          description='',
@@ -118,10 +123,10 @@ def newItem():
            methods=['GET', 'POST'])
 def editItem(cat_id, cat_name, item_id, item_name):
     categories = session.query(Category)
-    .filter_by(useremail=getUserEmail()).all()
+    categories = categories.filter_by(useremail=getUserEmail()).all()
     item = session.query(Item).filter_by(id=item_id).one()
     if login_session['email'] != item.useremail:
-        redirect('/unauthorized')
+        return redirect('/unauthorized')
     if request.method == 'POST':
         item.name = request.form['name']
         item.description = request.form['description']
@@ -133,6 +138,7 @@ def editItem(cat_id, cat_name, item_id, item_name):
     else:
         return render_template('newItem.html',
                                username=getUsername(),
+                               useremail=getUserEmail(),
                                categories=categories,
                                Item=item)
 
@@ -146,7 +152,7 @@ def deleteItem(cat_id, cat_name, item_id, item_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     item = session.query(Item).filter_by(id=item_id).one()
     if login_session['email'] != item.useremail:
-        redirect('/unauthorized')
+        return redirect('/unauthorized')
     if request.method == 'POST':
         session.query(Item).filter_by(id=item_id).delete()
         flash('Item %s Successfully Deleted' % item_name)
@@ -155,6 +161,7 @@ def deleteItem(cat_id, cat_name, item_id, item_name):
     else:
         return render_template('deleteItem.html',
                                username=getUsername(),
+                               useremail=getUserEmail(),
                                category=category,
                                item=item)
 
@@ -164,10 +171,11 @@ def deleteItem(cat_id, cat_name, item_id, item_name):
 def showCategory(cat_id, cat_name):
     categories = session.query(Category).all()
     items = session.query(Item)
-    .filter_by(category_id=cat_id)
-    .order_by(asc(Item.name)).all()
+    items = items.filter_by(category_id=cat_id)
+    items = items.order_by(asc(Item.name)).all()
     return render_template('catDetail.html',
                            username=getUsername(),
+                           useremail=getUserEmail(),
                            categories=categories,
                            lastItems=items)
 
@@ -177,8 +185,8 @@ def showCategory(cat_id, cat_name):
 def categoryJSON(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     items = session.query(Item)
-    .filter_by(category_id=cat_id)
-    .order_by(asc(Item.name)).all()
+    items = items.filter_by(category_id=cat_id)
+    items = items.order_by(asc(Item.name)).all()
     return jsonify(Category=category.serialize)
 
 
@@ -197,6 +205,7 @@ def newCategory():
     else:
         return render_template('newCategory.html',
                                username=getUsername(),
+                               useremail=getUserEmail(),
                                category=Category(name='', description=''))
 
 
@@ -207,7 +216,7 @@ def newCategory():
 def editCategory(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     if login_session['email'] != category.useremail:
-        redirect('/unauthorized')
+        return redirect('/unauthorized')
     if request.method == 'POST':
         category.name = request.form['name']
         category.description = request.form['description']
@@ -218,6 +227,7 @@ def editCategory(cat_id, cat_name):
     else:
         return render_template('newCategory.html',
                                username=getUsername(),
+                               useremail=getUserEmail(),
                                category=category)
 
 
@@ -228,7 +238,7 @@ def editCategory(cat_id, cat_name):
 def deleteCategory(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     if login_session['email'] != category.useremail:
-        redirect('/unauthorized')
+        return redirect('/unauthorized')
     if request.method == 'POST':
         items = session.query(Item).filter_by(category_id=cat_id).delete()
         session.delete(category)

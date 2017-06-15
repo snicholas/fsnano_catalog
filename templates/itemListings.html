@@ -10,7 +10,7 @@
 							item_name = item.name
 					)}}">{{item.name}}
 			</a>
-			{% if(username != '') %}
+			{% if(username != '' and useremail==item.useremail) %}
 			<a href="{{url_for('editItem',
 							cat_id = item.category.id, cat_name = item.category.name,
 							item_id = item.id, item_name = item.name)}}">
