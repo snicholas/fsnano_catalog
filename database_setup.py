@@ -36,7 +36,8 @@ class Item(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String(250))
     category_id = Column(Integer, ForeignKey('category.id'))
-    category = relationship(Category, backref('item', cascade='all, delete'))
+    category = relationship(Category,
+                            backref=backref('item', cascade='all, delete'))
     date_insert = Column(Date)
     useremail = Column(String(250), nullable=False)
 

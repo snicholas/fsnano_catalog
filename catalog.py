@@ -87,8 +87,8 @@ def itemDetailJSON(cat_id, cat_name, item_id, item_name):
 
 
 # Item creation
-@login_required
 @app.route('/catalog/newItem', methods=['GET', 'POST'])
+@login_required
 def newItem():
     categories = session.query(Category)
     categories = categories.filter_by(useremail=getUserEmail()).all()
@@ -117,10 +117,10 @@ def newItem():
 
 
 # Item edit
-@login_required
 @app.route('/catalog/<int:cat_id>/<string:cat_name>/' +
            '<int:item_id>/<string:item_name>/edit',
            methods=['GET', 'POST'])
+@login_required
 def editItem(cat_id, cat_name, item_id, item_name):
     categories = session.query(Category)
     categories = categories.filter_by(useremail=getUserEmail()).all()
@@ -144,10 +144,10 @@ def editItem(cat_id, cat_name, item_id, item_name):
 
 
 # Item delete
-@login_required
 @app.route('/catalog/<int:cat_id>/<string:cat_name>/' +
            '<int:item_id>/<string:item_name>/delete',
            methods=['GET', 'POST'])
+@login_required
 def deleteItem(cat_id, cat_name, item_id, item_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     item = session.query(Item).filter_by(id=item_id).one()
@@ -210,9 +210,9 @@ def newCategory():
 
 
 # Category edit
-@login_required
 @app.route('/catalog/<int:cat_id>/<string:cat_name>/edit',
            methods=['GET', 'POST'])
+@login_required
 def editCategory(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     if login_session['email'] != category.useremail:
@@ -232,9 +232,9 @@ def editCategory(cat_id, cat_name):
 
 
 # Category delete
-@login_required
 @app.route('/catalog/<int:cat_id>/<string:cat_name>/delete',
            methods=['GET', 'POST'])
+@login_required
 def deleteCategory(cat_id, cat_name):
     category = session.query(Category).filter_by(id=cat_id).one()
     if login_session['email'] != category.useremail:
@@ -368,4 +368,4 @@ def gconnect():
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=80)
